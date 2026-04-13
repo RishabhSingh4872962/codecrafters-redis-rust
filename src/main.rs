@@ -19,7 +19,10 @@ fn main() {
                 let mut buf = Vec::new();
                 // let res=   stream.peek(&mut buf).expect("Byte see");
 
-                let res = stream.read_to_end(&mut buf).unwrap();
+                 stream.read_to_end(&mut buf).unwrap();
+
+
+                  stream.write_all(b"this is pong foin\r\n").unwrap();
 
                 match String::from_utf8(buf) {
                     Ok(str) => {

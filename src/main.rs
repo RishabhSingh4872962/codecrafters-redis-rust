@@ -24,7 +24,7 @@ fn main() {
                 loop {
                     match stream.read(&mut buf) {
                         Ok(n) => {
-                            stream.write_all(b"+PING\r\n").unwrap();
+                            stream.write_all(b"+PONG\r\n").unwrap();
                         }
                         Err(e) => {
                             println!("{e}");

@@ -7,13 +7,15 @@ use std::{
 };
 
 fn handle_stream(mut stream: TcpStream) {
-    let mut buf = [0; 1024];
+    let mut buf = Vec::new();
 
     loop {
         match stream.read(&mut buf) {
             Ok(res) => {
+
+                let v=buf.clone();
             
-            println!("==> {:?}",String::from_utf8_lossy(&buf[..]));
+            println!("==> {:?}",String::from_utf8(v));
                
                 stream.write_all(b"+PONG\r\n").unwrap();
             }
@@ -27,6 +29,11 @@ fn handle_stream(mut stream: TcpStream) {
     }
 
     // println!("accepted new connection");
+}
+
+
+fn handle_stream_parser(){
+
 }
 
 fn main() {

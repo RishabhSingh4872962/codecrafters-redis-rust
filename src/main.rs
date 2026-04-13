@@ -21,9 +21,9 @@ fn main() {
 
                 loop {
                     match stream.read(&mut buf) {
-                        Ok(r) => {
+                        Ok(_) => {
 
-                            println!("{:?}",String::from_utf8_lossy(&buf[..]));
+                            // println!("{:?}",String::from_utf8_lossy(&buf[..]));
 
                             stream.write_all(b"+PONG\r\n").unwrap();
                         }

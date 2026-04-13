@@ -1,12 +1,17 @@
 #![allow(unused_imports)]
 use std::{
+    collections::HashMap,
     io::{Read, Write},
     net::{TcpListener, TcpStream},
     thread,
     time::Duration,
 };
 
-fn handle_stream(mut stream: TcpStream) {
+const NULL_BULK_STRING: &str = "$-1\r\n";
+
+const OK_SIMPLE_STRING: &str = "+OK\r\n";
+
+fn handle_stream(mut stream: TcpStream, mut store: HashMap<String, String>) {
     let mut buf = [0; 1024];
 
     loop {
@@ -18,7 +23,7 @@ fn handle_stream(mut stream: TcpStream) {
 
                 let res = handle_stream_parser(&str);
 
-                println!("ress===> {:?}",res);
+                println!("ress===> {:?}", res);
 
                 match res[0] {
                     "PING" => {
@@ -28,6 +33,26 @@ fn handle_stream(mut stream: TcpStream) {
                         let s = format!("${}\r\n{}\r\n", res[1].len(), res[1]);
 
                         stream.write_all(s.as_bytes()).unwrap();
+                    }
+                    "SET" => {
+                        let key = res[1].to_string();
+
+                        let value = res[2].to_string();
+
+                        store.insert(key, value);
+
+                        stream.write_all(OK_SIMPLE_STRING.as_bytes()).unwrap();
+                    }
+                    "GET" => {
+                        let key = res[1];
+
+                        if let Some(str) = store.get(key) {
+                            let s = format!("${}\r\n{}\r\n", str.len(), str);
+
+                            stream.write_all(s.as_bytes()).unwrap();
+                        } else {
+                            stream.write_all(NULL_BULK_STRING.as_bytes()).unwrap();
+                        }
                     }
                     _ => {}
                 }
@@ -44,7 +69,7 @@ fn handle_stream(mut stream: TcpStream) {
     // println!("accepted new connection");
 }
 
-fn handle_stream_parser(str: &str) -> Vec<&str> {
+fn handle_stream_parser<'a>(str: &'a str) -> Vec<&'a str> {
     let first_char = &str[..1];
 
     let mut v: Vec<&str> = Vec::new();
@@ -96,7 +121,11 @@ fn main() {
 
     for stream in listener.incoming() {
         if let Ok(stream) = stream {
-            thread::spawn(|| handle_stream(stream));
+            thread::spawn({
+                let store: HashMap<String, String> = HashMap::new();
+
+                || handle_stream(stream, store)
+            });
         }
     }
 

@@ -1,7 +1,9 @@
 #![allow(unused_imports)]
 use std::{
     io::{Read, Write},
-    net::TcpListener, thread, time::Duration,
+    net::TcpListener,
+    thread,
+    time::Duration,
 };
 
 fn main() {
@@ -22,10 +24,11 @@ fn main() {
                 loop {
                     match stream.read(&mut buf) {
                         Ok(n) => {
-                            println!("{:?}",&buf[..n]);
-                            stream.write_all(b"+PONG\r\n").unwrap();
-                            thread::sleep(Duration::from_micros(100));
-                            break;
+                            if let Ok(s) = String::from_utf8(buf.clone()) {
+                                if s != "" {
+                                    stream.write_all(b"+PONG\r\n").unwrap();
+                                }
+                            }
                         }
                         Err(e) => {
                             println!("{e}");

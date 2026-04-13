@@ -14,6 +14,7 @@ fn main() {
         match stream {
             Ok(mut stream) => {
 
+                  stream.write_all(b"+PONG\r\n").unwrap();
                let mut buf = String::new();
             // let res=   stream.peek(&mut buf).expect("Byte see");
 
@@ -24,7 +25,7 @@ fn main() {
 
 
 
-                stream.write_all(b"+PONG\r\n").unwrap();
+              
                 // println!("accepted new connection");
             }
             Err(e) => {

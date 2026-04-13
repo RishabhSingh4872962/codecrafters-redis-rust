@@ -22,8 +22,9 @@ fn main() {
                 loop {
                     match stream.read(&mut buf) {
                         Ok(n) => {
-                            println!("{:?}", &buf[..n]);
-                            stream.write_all(b"+PONG\r\n").unwrap();
+                            buf.flush().unwrap();
+
+                            stream.write_all(b"+PING\r\n").unwrap();
                         }
                         Err(e) => {
                             println!("{e}");
@@ -31,8 +32,6 @@ fn main() {
                             break;
                         }
                     }
-
-                    buf.flush().unwrap();
                 }
 
                 // println!("accepted new connection");

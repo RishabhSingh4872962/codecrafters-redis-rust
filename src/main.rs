@@ -15,7 +15,8 @@ fn main() {
     for stream in listener.incoming() {
         match stream {
             Ok(mut stream) => {
-                stream.write_all(b"+PONg\r\n").unwrap();
+                stream.write_all(b"+PONG\r\n").unwrap();
+
                 let mut buf = Vec::new();
                 // let res=   stream.peek(&mut buf).expect("Byte see");
 

@@ -24,7 +24,7 @@ fn main() {
                         Ok(n) => {
                             println!("{:?}",String::from_utf8(buf.clone()));
                             stream.write_all(b"+PONG\r\n").unwrap();
-                            thread::sleep(Duration::from_micros(1));
+                            thread::sleep(Duration::from_micros(100));
                             break;
                         }
                         Err(e) => {

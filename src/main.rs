@@ -12,7 +12,11 @@ fn handle_stream(mut stream: TcpStream) {
     loop {
         match stream.read(&mut buf) {
             Ok(_) => {
-                println!("{:?}", String::from_utf8_lossy(&buf[..]));
+
+                let res=String::from_utf8_lossy(&buf[..]);
+
+              
+              println!("{:?}",res.to_string());
 
                 stream.write_all(b"+PONG\r\n").unwrap();
             }

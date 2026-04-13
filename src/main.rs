@@ -13,7 +13,7 @@ fn handle_stream(mut stream: TcpStream) {
         match stream.read(&mut buf) {
             Ok(res) => {
             
-            println!("==> {:?}",String::from_utf8_lossy(&buf[..]).contains("*"));
+            println!("==> {:?}",String::from_utf8_lossy(&buf[..]));
                
                 stream.write_all(b"+PONG\r\n").unwrap();
             }

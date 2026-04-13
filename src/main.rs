@@ -22,7 +22,7 @@ fn handle_stream(mut stream: TcpStream) {
 
                 match res[0] {
                     "PING" => {
-                        stream.write_all(b"+PONG\n\r").unwrap();
+                        stream.write_all(b"+PONG\r\n").unwrap();
                     }
                     "ECHO" => {
                         let s = format!("${}\r\n{}\r\n", res[1].len(), res[1]);

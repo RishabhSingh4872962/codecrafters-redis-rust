@@ -17,11 +17,14 @@ fn main() {
     for stream in listener.incoming() {
         match stream {
             Ok(mut stream) => {
-                let mut buf = Vec::new();
+                let mut buf =[0;1024];
 
                 loop {
                     match stream.read(&mut buf) {
-                        Ok(_) => {
+                        Ok(r) => {
+
+                            println!("{:?}",String::from_utf8_lossy(&buf[..]));
+
                             stream.write_all(b"+PONG\r\n").unwrap();
                         }
                         Err(e) => {
@@ -30,7 +33,7 @@ fn main() {
                             break;
                         }
                     }
-                    buf.flush().unwrap();
+                    // buf.flush().unwrap();
                 }
 
                 // println!("accepted new connection");

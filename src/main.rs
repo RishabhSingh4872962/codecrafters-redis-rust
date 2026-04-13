@@ -28,6 +28,8 @@ fn main() {
                         }
                         Err(e) => {
                             println!("{e}");
+                            stream.write_all(b"+EEEror\r\n").unwrap();
+                            break;
                         }
                     }
 

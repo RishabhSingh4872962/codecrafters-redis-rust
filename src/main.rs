@@ -1,7 +1,7 @@
 #![allow(unused_imports)]
 use std::{
     io::{Read, Write},
-    net::TcpListener,
+    net::TcpListener, thread, time::Duration,
 };
 
 fn main() {
@@ -24,7 +24,7 @@ fn main() {
                         Ok(n) => {
                             println!("{:?}",String::from_utf8(buf.clone()));
                             stream.write_all(b"+PONG\r\n").unwrap();
-
+                            thread::sleep(Duration::from_micros(1));
                             break;
                         }
                         Err(e) => {

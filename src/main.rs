@@ -24,6 +24,8 @@ fn main() {
                         Ok(n) => {
                             println!("{:?}",String::from_utf8(buf.clone()));
                             stream.write_all(b"+PONG\r\n").unwrap();
+
+                            break;
                         }
                         Err(e) => {
                             println!("{e}");

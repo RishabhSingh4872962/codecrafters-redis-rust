@@ -20,7 +20,7 @@ fn main() {
                 let mut buf = Vec::new();
 
                 loop {
-                    match stream.read_to_end(&mut buf) {
+                    match stream.read(&mut buf) {
                         Ok(n) => {
                             println!("{:?}", &buf[..n]);
                             stream.write_all(b"+PONG\r\n").unwrap();

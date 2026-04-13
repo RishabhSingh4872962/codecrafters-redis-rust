@@ -7,13 +7,13 @@ use std::{
 };
 
 fn handle_stream(mut stream: TcpStream) {
-    let mut buf =Vec::new();
+    let mut buf = [0; 1024];
 
     loop {
         match stream.read(&mut buf) {
             Ok(res) => {
             
-            println!("==> {:?}",String::from_utf8(buf.clone()));
+            println!("==> {:?}",String::from_utf8_lossy(&buf[..]).contains("*"));
                
                 stream.write_all(b"+PONG\r\n").unwrap();
             }

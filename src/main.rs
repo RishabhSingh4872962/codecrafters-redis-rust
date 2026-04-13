@@ -25,6 +25,8 @@ fn main() {
                     match stream.read(&mut buf) {
                         Ok(n) => {
                             if let Ok(s) = String::from_utf8(buf.clone()) {
+
+                                println!("{}",s);
                                 if s != "" {
                                     stream.write_all(b"+PONG\r\n").unwrap();
                                 }

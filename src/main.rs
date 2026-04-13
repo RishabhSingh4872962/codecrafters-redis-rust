@@ -18,13 +18,12 @@ fn main() {
                 stream.write_all(b"+PONG\r\n").unwrap();
 
                 let mut buf = Vec::new();
-                // let res=   stream.peek(&mut buf).expect("Byte see");
 
                 loop {
                     match stream.read_to_end(&mut buf) {
                         Ok(n) => {
                             println!("{:?}", &buf[..n]);
-                             stream.write_all(b"+PONG\r\n").unwrap();
+                            stream.write_all(b"+PONG\r\n").unwrap();
                         }
                         Err(e) => {
                             println!("{e}");
@@ -33,10 +32,8 @@ fn main() {
                         }
                     }
 
-                    // buf.flush().unwrap();
+                    buf.flush().unwrap();
                 }
-
-                // println!("{:?}  ,res==> {:?}",stream,String::from_utf8(buf));
 
                 // println!("accepted new connection");
             }

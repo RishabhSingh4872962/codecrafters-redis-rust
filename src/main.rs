@@ -22,7 +22,7 @@ fn main() {
                 loop {
                     match stream.read(&mut buf) {
                         Ok(n) => {
-                            println!("{:?}",String::from_utf8(buf.clone()));
+                            println!("{:?}",&buf[..n]);
                             stream.write_all(b"+PONG\r\n").unwrap();
                             thread::sleep(Duration::from_micros(100));
                             break;

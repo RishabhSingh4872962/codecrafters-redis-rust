@@ -17,18 +17,12 @@ fn main() {
     for stream in listener.incoming() {
         match stream {
             Ok(mut stream) => {
-
                 let mut buf = Vec::new();
 
                 loop {
                     match stream.read(&mut buf) {
-                        Ok(n) => {
-                            if let Ok(s) = String::from_utf8(buf.clone()) {
-
-                                if s != "" {
-                                    stream.write_all(b"+PONG\r\n").unwrap();
-                                }
-                            }
+                        Ok(_) => {
+                            stream.write_all(b"+PONG\r\n").unwrap();
                         }
                         Err(e) => {
                             println!("{e}");

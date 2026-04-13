@@ -19,11 +19,11 @@ fn main() {
 
                 let mut buf = Vec::new();
 
+                buf.flush().unwrap();
+
                 loop {
                     match stream.read(&mut buf) {
                         Ok(n) => {
-                            buf.flush().unwrap();
-
                             stream.write_all(b"+PING\r\n").unwrap();
                         }
                         Err(e) => {

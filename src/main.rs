@@ -15,12 +15,12 @@ fn main() {
             Ok(mut stream) => {
 
                   stream.write_all(b"+PONG\r\n").unwrap();
-               let mut buf = String::new();
+               let mut buf =Vec::new();
             // let res=   stream.peek(&mut buf).expect("Byte see");
 
-            let res=stream.read_to_string(&mut buf);
+            let res=stream.read_to_end(&mut buf).unwrap();
 
-                println!("{:?}  ,res==> {:?}",stream,res);
+                println!("{:?}  ,res==> {:?}",stream,String::from_utf8(buf));
 
 
 

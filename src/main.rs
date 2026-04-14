@@ -43,7 +43,7 @@ fn handle_stream(mut stream: TcpStream, mut store: HashMap<String, Value>) {
 
                 let res = handle_stream_parser(&str);
 
-                println!("ress===> {:?}", res);
+                // println!("ress===> {:?}", res);
 
                 match res[0] {
                     "PING" => {
@@ -148,6 +148,8 @@ fn handle_ele_parse<'a>(str: &'a str, v: &mut Vec<&'a str>, n: u8) {
             let end: usize = 2 + str_length;
 
             let s: &str = &str[start..end];
+
+            println!("s==========>{} ,n====> {}",s,n);
 
             v.push(s);
 

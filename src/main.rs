@@ -35,7 +35,7 @@ fn handle_stream(mut stream: TcpStream, mut store: HashMap<String, Value>) {
             Ok(_res) => {
                 let str = String::from_utf8_lossy(&buf[..]);
 
-                let str: String = str.split("\r\n").collect();
+                let str: String = "*5$3SET$10strawberry$5grape$2PX$3100".to_string();
 
                 println!("st====> {}",str);
 
@@ -169,17 +169,28 @@ fn main() {
 
     // Uncomment the code below to pass the first stage
 
-    let listener = TcpListener::bind("127.0.0.1:6379").unwrap();
+    // let listener = TcpListener::bind("127.0.0.1:6379").unwrap();
 
-    for stream in listener.incoming() {
-        if let Ok(stream) = stream {
-            thread::spawn({
-                let store: HashMap<String, Value> = HashMap::new();
+    // for stream in listener.incoming() {
+    //     if let Ok(stream) = stream {
+    //         thread::spawn({
+    //             let store: HashMap<String, Value> = HashMap::new();
 
-                || handle_stream(stream, store)
-            });
-        }
-    }
+    //             || handle_stream(stream, store)
+    //         });
+    //     }
+    // }
 
-    // let req = b"*1\r\n$4\r\nPING\r\n";
+    // let req = b"*5$3SET$10strawberry$5grape$2PX$3100";
+
+       let str: String = "*5$3SET$10strawberry$5grape$2PX$3100".to_string();
+
+                println!("st====> {}",str);
+
+                // let uppper_str = str.to_uppercase();
+
+                let res = handle_stream_parser(&str);
+
+                println!("{:?}",res);
+
 }

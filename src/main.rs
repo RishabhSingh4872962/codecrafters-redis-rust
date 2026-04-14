@@ -4,14 +4,30 @@ use std::{
     io::{Read, Write},
     net::{TcpListener, TcpStream},
     thread,
-    time::Duration,
+    time::{Duration, Instant, SystemTime},
 };
 
 const NULL_BULK_STRING: &str = "$-1\r\n";
 
 const OK_SIMPLE_STRING: &str = "+OK\r\n";
 
-fn handle_stream(mut stream: TcpStream, mut store: HashMap<String, String>) {
+
+
+pub struct Value {
+    value: String,
+    expiry: Option<Instant>,
+}
+
+impl Value {
+    fn new(val: String, exp: Option<Instant>) -> Self {
+        Self {
+            value: val,
+            expiry: exp,
+        }
+    }
+}
+
+fn handle_stream(mut stream: TcpStream, mut store: HashMap<String, Value>) {
     let mut buf = [0; 1024];
 
     loop {
@@ -21,9 +37,11 @@ fn handle_stream(mut stream: TcpStream, mut store: HashMap<String, String>) {
 
                 let str: String = str.split("\r\n").collect();
 
-                let res = handle_stream_parser(&str);
+                let uppper_str = str.to_uppercase();
 
-                println!("ress===> {:?}", res);
+                let res = handle_stream_parser(&uppper_str);
+
+                // println!("ress===> {:?}", res);
 
                 match res[0] {
                     "PING" => {
@@ -39,15 +57,39 @@ fn handle_stream(mut stream: TcpStream, mut store: HashMap<String, String>) {
 
                         let value = res[2].to_string();
 
-                        store.insert(key, value);
+                        let exp_format = res.get(3);
+
+                        match exp_format {
+                            Some(exp) => {
+                                let duration: u64 = res[4].parse().unwrap();
+
+                                let expiry_time = handle_expiry(*exp, duration);
+
+                                store.insert(key, Value::new(value, Some(expiry_time)));
+                            }
+                            None => {
+                                store.insert(key, Value::new(value, None));
+                            }
+                        }
 
                         stream.write_all(OK_SIMPLE_STRING.as_bytes()).unwrap();
                     }
                     "GET" => {
                         let key = res[1];
 
-                        if let Some(str) = store.get(key) {
-                            let s = format!("${}\r\n{}\r\n", str.len(), str);
+                        if let Some(val) = store.get(key) {
+                            if val.expiry.is_some() {
+                                let expiry = val.expiry.unwrap();
+
+                                if expiry < Instant::now() {
+                                    stream.write_all(NULL_BULK_STRING.as_bytes()).unwrap();
+
+                                    store.remove(key).unwrap();
+                                    return;
+                                }
+                            }
+
+                            let s = format!("${}\r\n{}\r\n", val.value.len(), val.value);
 
                             stream.write_all(s.as_bytes()).unwrap();
                         } else {
@@ -58,15 +100,21 @@ fn handle_stream(mut stream: TcpStream, mut store: HashMap<String, String>) {
                 }
             }
             Err(e) => {
-                println!("{e}");
+                // println!("{e}");
                 stream.write_all(b"+EEEror\r\n").unwrap();
                 break;
             }
         }
-        // buf.flush().unwrap();
     }
+}
 
-    // println!("accepted new connection");
+fn handle_expiry(expiry_type: &str, time: u64) -> Instant {
+    match expiry_type {
+        "PX" => Instant::now() + Duration::from_millis(time),
+
+        "EX" => Instant::now() + Duration::from_secs(time),
+        _ => Instant::now(),
+    }
 }
 
 fn handle_stream_parser<'a>(str: &'a str) -> Vec<&'a str> {
@@ -122,7 +170,7 @@ fn main() {
     for stream in listener.incoming() {
         if let Ok(stream) = stream {
             thread::spawn({
-                let store: HashMap<String, String> = HashMap::new();
+                let store: HashMap<String, Value> = HashMap::new();
 
                 || handle_stream(stream, store)
             });

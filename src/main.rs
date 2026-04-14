@@ -37,6 +37,8 @@ fn handle_stream(mut stream: TcpStream, mut store: HashMap<String, Value>) {
 
                 let str: String = str.split("\r\n").collect();
 
+                println!("st====> {}",str);
+
                 // let uppper_str = str.to_uppercase();
 
                 let res = handle_stream_parser(&str);

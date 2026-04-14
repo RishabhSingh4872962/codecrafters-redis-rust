@@ -41,7 +41,7 @@ fn handle_stream(mut stream: TcpStream, mut store: HashMap<String, Value>) {
 
                 let res = handle_stream_parser(&str);
 
-                // println!("ress===> {:?}", res);
+                println!("ress===> {:?}", res);
 
                 match res[0] {
                     "PING" => {

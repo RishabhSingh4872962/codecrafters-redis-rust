@@ -11,8 +11,6 @@ const NULL_BULK_STRING: &str = "$-1\r\n";
 
 const OK_SIMPLE_STRING: &str = "+OK\r\n";
 
-
-
 pub struct Value {
     value: String,
     expiry: Option<Instant>,
@@ -35,13 +33,13 @@ fn handle_stream(mut stream: TcpStream, mut store: HashMap<String, Value>) {
             Ok(_res) => {
                 let str = String::from_utf8_lossy(&buf[..]);
 
-                let str: String = "*5$3SET$10strawberry$5grape$2PX$3100".to_string();
+                // let str: String = "*5$3SET$10strawberry$5grape$2PX$3100".to_string();
 
-                println!("st====> {}",str);
+                println!("st====> {}", str);
 
                 // let uppper_str = str.to_uppercase();
 
-                let res = handle_stream_parser(&str);
+                let res = parser(&str);
 
                 // println!("ress===> {:?}", res);
 
@@ -119,78 +117,75 @@ fn handle_expiry(expiry_type: &str, time: u64) -> Instant {
     }
 }
 
-fn handle_stream_parser<'a>(str: &'a str) -> Vec<&'a str> {
-    let first_char = &str[..1];
-
-    let mut v: Vec<&str> = Vec::new();
-
-    match first_char {
-        "*" => {
-            let arr_length: u8 = str[1..2].parse().unwrap();
-
-            handle_ele_parse(&str[2..], &mut v, arr_length);
-        }
-        _ => {}
-    }
-
-    v
-}
-
-fn handle_ele_parse<'a>(str: &'a str, v: &mut Vec<&'a str>, n: u8) {
-    let first_char = &str[..1];
-
-    match first_char {
-        "$" => {
-            let str_length: usize = str[1..2].parse().unwrap();
-
-            let start: usize = 2;
-
-            let end: usize = 2 + str_length;
-
-            let s: &str = &str[start..end];
-
-            println!("s==========>{} ,n====> {}",s,n);
-
-            v.push(s);
-
-            if n == 1 {
-                return;
-            }
-
-            handle_ele_parse(&str[end..], v, n - 1)
-        }
-        _ => {}
-    }
-}
-
 fn main() {
     // You can use print statements as follows for debugging, they'll be visible when running tests.
     println!("Logs from your program will appear here!");
 
     // Uncomment the code below to pass the first stage
 
-    // let listener = TcpListener::bind("127.0.0.1:6379").unwrap();
+    let listener = TcpListener::bind("127.0.0.1:6379").unwrap();
 
-    // for stream in listener.incoming() {
-    //     if let Ok(stream) = stream {
-    //         thread::spawn({
-    //             let store: HashMap<String, Value> = HashMap::new();
+    for stream in listener.incoming() {
+        if let Ok(stream) = stream {
+            thread::spawn({
+                let store: HashMap<String, Value> = HashMap::new();
 
-    //             || handle_stream(stream, store)
-    //         });
-    //     }
-    // }
+                || handle_stream(stream, store)
+            });
+        }
+    }
 
     // let req = b"*5$3SET$10strawberry$5grape$2PX$3100";
 
-       let str: String = "*5$3SET$10strawberry$5grape$2PX$3100".to_string();
+    // let str: String =
+    //     "*5\r\n$3\r\nSET\r\n$10\r\nstrawberry\r\n$5\r\ngrape\r\n$2\r\nPX\r\n$3\r\n100\r\n"
+    //         .to_string();
+}
 
-                println!("st====> {}",str);
+fn parser(str: &str) -> Vec<&str> {
+    let first_ch: &str = &str[..1];
 
-                // let uppper_str = str.to_uppercase();
+    let mut v: Vec<&str> = Vec::new();
 
-                let res = handle_stream_parser(&str);
+    match first_ch {
+        "*" => {
+            let next = str.find("\r\n");
 
-                println!("{:?}",res);
+            if let Some(index) = next {
+                let mut arr_len: usize = str[1..index].parse().unwrap();
 
+                let rest_str = &str[index + 2..];
+
+                let mut p = 0;
+
+                for s in rest_str.lines() {
+                    handle_string(s, &mut p, &mut v);
+                    arr_len -= 1;
+                }
+
+                if arr_len > 0 {
+                    v.clear();
+                }
+            }
+
+            return v;
+        }
+        _ => return v,
+    }
+}
+
+fn handle_string<'a>(str: &'a str, prev: &mut usize, v: &mut Vec<&'a str>) {
+    let first_ch = &str[..1];
+
+    match first_ch {
+        "$" => {
+            *prev = str[1..].parse().unwrap();
+        }
+        _ if str.len() > 0 => {
+            if str.len() == *prev {
+                v.push(str);
+            }
+        }
+        _ => {}
+    }
 }

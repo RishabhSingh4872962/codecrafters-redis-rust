@@ -39,7 +39,7 @@ fn handle_stream(mut stream: TcpStream, mut store: HashMap<String, Value>) {
 
                 // let uppper_str = str.to_uppercase();
 
-                let res =[];
+                let res =["PING"];
 
                 // println!("ress===> {:?}", res);
 

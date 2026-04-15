@@ -35,13 +35,13 @@ fn handle_stream(mut stream: TcpStream, mut store: HashMap<String, Value>) {
 
                 // let str: String = "*5$3SET$10strawberry$5grape$2PX$3100".to_string();
 
-                println!("st====> {}", str);
+                // println!("st====> {}", str);
 
                 // let uppper_str = str.to_uppercase();
 
                 let res = parser(&str);
 
-                // println!("ress===> {:?}", res);
+                println!("ress===> {:?}", res);
 
                 match res[0] {
                     "PING" => {
@@ -99,7 +99,7 @@ fn handle_stream(mut stream: TcpStream, mut store: HashMap<String, Value>) {
                     _ => {}
                 }
             }
-            Err(e) => {
+            Err(_e) => {
                 // println!("{e}");
                 stream.write_all(b"+EEEror\r\n").unwrap();
                 break;

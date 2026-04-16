@@ -41,7 +41,7 @@ fn handle_stream(
 
                 // let str: String = "*5$3SET$10strawberry$5grape$2PX$3100".to_string();
 
-                // println!("st====> {:?}", str);
+                println!("str====> {:?}", str);
 
                 // let uppper_str = str.to_uppercase();
 
@@ -131,7 +131,7 @@ fn handle_stream(
                     "LRANGE" => {
 
 
-                        println!("str======> {}",str);
+                        println!("lrange =========> str======> {}",str);
 
                         let list_key = res[1];
 
@@ -235,7 +235,7 @@ fn parser(str: &str) -> Vec<&str> {
     let mut v: Vec<&str> = Vec::new();
 
 
-    println!("str parser===>{}",str);
+    // println!("str parser===>{}",str);
     match first_ch {
         "*" => {
             let next = str.find("\r\n");

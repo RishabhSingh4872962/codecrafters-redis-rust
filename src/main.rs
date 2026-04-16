@@ -132,6 +132,7 @@ fn handle_stream(
 
 
                         println!("str======> {}",str);
+
                         let list_key = res[1];
 
                         if let Some(val) = list_store.get(list_key) {
@@ -233,6 +234,8 @@ fn parser(str: &str) -> Vec<&str> {
 
     let mut v: Vec<&str> = Vec::new();
 
+
+    println!("str parser===>{}",str);
     match first_ch {
         "*" => {
             let next = str.find("\r\n");

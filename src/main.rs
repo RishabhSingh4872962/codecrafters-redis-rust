@@ -162,7 +162,6 @@ fn handle_stream(
                                     stream.write_all(result.as_bytes()).unwrap();
                                     buf = [0; 1024];
 
-                                    return;
                                 }
                             }
                         }

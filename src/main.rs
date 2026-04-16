@@ -149,8 +149,11 @@ fn handle_stream(
                                 let get_v;
 
                                 if end_index + 1 >= val.value.len() {
+                                    println!("start ========>{} ,end=========>{}",start_index,end_index);
                                     get_v = val.value.get(start_index..);
                                 } else {
+                                    println!("2222222222222222222222222 start ========>{} ,end=========>{}",start_index,end_index);
+
                                     get_v = val.value.get(start_index..end_index + 1);
                                 }
 

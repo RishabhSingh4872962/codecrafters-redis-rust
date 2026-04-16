@@ -126,6 +126,8 @@ fn handle_stream(
                         }
 
                         stream.write_all(response.as_bytes()).unwrap();
+
+                        buf=[0;1024];
                     }
 
                     "LRANGE" => {
@@ -144,9 +146,9 @@ fn handle_stream(
                                 let get_v;
 
                                 if end_index >= val.value.len() {
-                                    get_v = val.value.get(start_index - 1..);
+                                    get_v = val.value.get(start_index ..);
                                 } else {
-                                    get_v = val.value.get(start_index - 1..end_index);
+                                    get_v = val.value.get(start_index..end_index);
                                 }
 
                                 if let Some(res) = get_v {

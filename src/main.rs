@@ -79,8 +79,7 @@ fn handle_stream(
                         }
 
                         stream.write_all(OK_SIMPLE_STRING.as_bytes()).unwrap();
-                        buf=[0;1024];
-
+                        buf = [0; 1024];
                     }
                     "GET" => {
                         let key = res[1];
@@ -100,12 +99,10 @@ fn handle_stream(
                             let s = format!("${}\r\n{}\r\n", val.value.len(), val.value);
 
                             stream.write_all(s.as_bytes()).unwrap();
-                            
                         } else {
                             stream.write_all(NULL_BULK_STRING.as_bytes()).unwrap();
                         }
-                        buf=[0;1024];
-
+                        buf = [0; 1024];
                     }
                     "RPUSH" => {
                         let key = res[1];
@@ -131,8 +128,7 @@ fn handle_stream(
                         }
 
                         stream.write_all(response.as_bytes()).unwrap();
-                        buf=[0;1024];
-
+                        buf = [0; 1024];
                     }
 
                     "LRANGE" => {
@@ -149,28 +145,35 @@ fn handle_stream(
                                 let get_v;
 
                                 if end_index + 1 >= val.value.len() {
-                                    println!("start ========>{} ,end=========>{}",start_index,end_index);
+                                    println!(
+                                        "start ========>{} ,end=========>{}",
+                                        start_index, end_index
+                                    );
                                     get_v = val.value.get(start_index..);
                                 } else {
-                                    println!("2222222222222222222222222 start ========>{} ,end=========>{}",start_index,end_index);
+                                    println!(
+                                        "2222222222222222222222222 start ========>{} ,end=========>{}",
+                                        start_index, end_index
+                                    );
 
                                     get_v = val.value.get(start_index..end_index + 1);
                                 }
 
-                                println!("get v========> {:?}",get_v);
+                                println!("get v========> {:?}", get_v);
 
                                 if let Some(res) = get_v {
                                     let result = create_array_response(res);
 
-                                    println!("result =============> {}",result);
+                                    println!("result =============> {}", result);
 
                                     stream.write_all(result.as_bytes()).unwrap();
-
                                 }
+                            } else {
+                                stream.write_all(EMPTY_ARRAY_STRING.as_bytes()).unwrap();
                             }
+                        } else {
+                            stream.write_all(EMPTY_ARRAY_STRING.as_bytes()).unwrap();
                         }
-
-                        stream.write_all(EMPTY_ARRAY_STRING.as_bytes()).unwrap();
                         buf = [0; 1024];
                     }
                     _ => {}

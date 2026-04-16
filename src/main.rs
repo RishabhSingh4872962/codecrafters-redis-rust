@@ -136,7 +136,7 @@ fn handle_stream(
                     }
 
                     "LRANGE" => {
-                        println!("lrange =========> str======> {}", str);
+                        println!("lrange =========> str======> {:?}", str);
 
                         let list_key = res[1];
 
@@ -153,6 +153,8 @@ fn handle_stream(
                                 } else {
                                     get_v = val.value.get(start_index..end_index + 1);
                                 }
+
+                                println!("get v========> {:?}",get_v);
 
                                 if let Some(res) = get_v {
                                     let result = create_array_response(res);

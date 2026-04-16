@@ -47,7 +47,7 @@ fn handle_stream(
 
                 let res = parser(&str);
 
-                // println!("ress===> {:?}", res);
+                println!("ress===> {:?}", res);
 
                 match res[0] {
                     "PING" => {

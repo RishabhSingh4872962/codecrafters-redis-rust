@@ -145,10 +145,10 @@ fn handle_stream(
                             if start_index < end_index && start_index < val.value.len() {
                                 let get_v;
 
-                                if end_index >= val.value.len() {
+                                if end_index+1 >= val.value.len() {
                                     get_v = val.value.get(start_index ..);
                                 } else {
-                                    get_v = val.value.get(start_index..end_index);
+                                    get_v = val.value.get(start_index..end_index+1);
                                 }
 
                                 if let Some(res) = get_v {

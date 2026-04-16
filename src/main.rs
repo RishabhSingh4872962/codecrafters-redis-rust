@@ -127,7 +127,6 @@ fn handle_stream(
 
                         stream.write_all(response.as_bytes()).unwrap();
 
-                        buf=[0;1024];
                     }
 
                     "LRANGE" => {
@@ -164,6 +163,8 @@ fn handle_stream(
                     }
                     _ => {}
                 }
+                        buf=[0;1024];
+
             }
             Err(_e) => {
                 // println!("{e}");

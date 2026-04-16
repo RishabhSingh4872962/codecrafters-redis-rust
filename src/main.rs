@@ -79,6 +79,8 @@ fn handle_stream(
                         }
 
                         stream.write_all(OK_SIMPLE_STRING.as_bytes()).unwrap();
+                        buf=[0;1024];
+
                     }
                     "GET" => {
                         let key = res[1];
@@ -98,9 +100,12 @@ fn handle_stream(
                             let s = format!("${}\r\n{}\r\n", val.value.len(), val.value);
 
                             stream.write_all(s.as_bytes()).unwrap();
+                            
                         } else {
                             stream.write_all(NULL_BULK_STRING.as_bytes()).unwrap();
                         }
+                        buf=[0;1024];
+
                     }
                     "RPUSH" => {
                         let key = res[1];
@@ -126,13 +131,12 @@ fn handle_stream(
                         }
 
                         stream.write_all(response.as_bytes()).unwrap();
+                        buf=[0;1024];
 
                     }
 
                     "LRANGE" => {
-
-
-                        println!("lrange =========> str======> {}",str);
+                        println!("lrange =========> str======> {}", str);
 
                         let list_key = res[1];
 
@@ -144,27 +148,28 @@ fn handle_stream(
                             if start_index < end_index && start_index < val.value.len() {
                                 let get_v;
 
-                                if end_index+1 >= val.value.len() {
-                                    get_v = val.value.get(start_index ..);
+                                if end_index + 1 >= val.value.len() {
+                                    get_v = val.value.get(start_index..);
                                 } else {
-                                    get_v = val.value.get(start_index..end_index+1);
+                                    get_v = val.value.get(start_index..end_index + 1);
                                 }
 
                                 if let Some(res) = get_v {
                                     let result = create_array_response(res);
 
                                     stream.write_all(result.as_bytes()).unwrap();
+                                    buf = [0; 1024];
+
                                     return;
                                 }
                             }
                         }
 
                         stream.write_all(EMPTY_ARRAY_STRING.as_bytes()).unwrap();
+                        buf = [0; 1024];
                     }
                     _ => {}
                 }
-                        buf=[0;1024];
-
             }
             Err(_e) => {
                 // println!("{e}");
@@ -236,7 +241,6 @@ fn parser(str: &str) -> Vec<&str> {
     let first_ch: &str = &str[..1];
 
     let mut v: Vec<&str> = Vec::new();
-
 
     // println!("str parser===>{}",str);
     match first_ch {

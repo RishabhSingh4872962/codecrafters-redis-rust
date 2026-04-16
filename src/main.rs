@@ -41,13 +41,13 @@ fn handle_stream(
 
                 // let str: String = "*5$3SET$10strawberry$5grape$2PX$3100".to_string();
 
-                println!("st====> {:?}", str);
+                // println!("st====> {:?}", str);
 
                 // let uppper_str = str.to_uppercase();
 
                 let res = parser(&str);
 
-                println!("ress===> {:?}", res);
+                // println!("ress===> {:?}", res);
 
                 match res[0] {
                     "PING" => {
@@ -129,6 +129,9 @@ fn handle_stream(
                     }
 
                     "LRANGE" => {
+
+
+                        println!("str======> {}",str);
                         let list_key = res[1];
 
                         if let Some(val) = list_store.get(list_key) {
@@ -138,7 +141,7 @@ fn handle_stream(
 
                             if start_index < end_index && start_index < val.value.len() {
                                 let get_v;
-                                
+
                                 if end_index >= val.value.len() {
                                     get_v = val.value.get(start_index - 1..);
                                 } else {
@@ -239,7 +242,7 @@ fn parser(str: &str) -> Vec<&str> {
 
                 let rest_str = &str[index + 2..];
 
-                println!("arr_len==> {},res_str ===>{:?}", 0, rest_str);
+                // println!("arr_len==> {},res_str ===>{:?}", 0, rest_str);
 
                 let mut p = 0;
 

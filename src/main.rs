@@ -11,6 +11,8 @@ const NULL_BULK_STRING: &str = "$-1\r\n";
 
 const OK_SIMPLE_STRING: &str = "+OK\r\n";
 
+const EMPTY_ARRAY_STRING: &str = "*0\r\n";
+
 pub struct Value<T> {
     value: T,
     expiry: Option<Instant>,
@@ -114,7 +116,6 @@ fn handle_stream(
                         let response: String;
 
                         if let Some(val) = list_store.get_mut(key) {
-                            
                             val.value.append(&mut v);
 
                             response = format!(":{}\r\n", val.value.len());
@@ -125,6 +126,35 @@ fn handle_stream(
                         }
 
                         stream.write_all(response.as_bytes()).unwrap();
+                    }
+
+                    "LRANGE" => {
+                        let list_key = res[1];
+
+                        if let Some(val) = list_store.get(list_key) {
+                            let start_index: usize = res[2].parse().unwrap();
+
+                            let end_index: usize = res[3].parse().unwrap();
+
+                            if start_index < end_index && start_index < val.value.len() {
+                                let get_v;
+                                
+                                if end_index >= val.value.len() {
+                                    get_v = val.value.get(start_index - 1..);
+                                } else {
+                                    get_v = val.value.get(start_index - 1..end_index);
+                                }
+
+                                if let Some(res) = get_v {
+                                    let result = create_array_response(res);
+
+                                    stream.write_all(result.as_bytes()).unwrap();
+                                    return;
+                                }
+                            }
+                        }
+
+                        stream.write_all(EMPTY_ARRAY_STRING.as_bytes()).unwrap();
                     }
                     _ => {}
                 }
@@ -147,6 +177,21 @@ fn handle_expiry(expiry_type: &str, time: u64) -> Instant {
     }
 }
 
+pub fn create_array_response(v: &[String]) -> String {
+    let mut res = format!("*{}\r\n", v.len());
+
+    for ele in v {
+        let s = create_string_response(ele);
+
+        res.push_str(&s);
+    }
+
+    res
+}
+
+pub fn create_string_response(str: &str) -> String {
+    format!("${}\r\n{}\r\n", str.len(), str)
+}
 fn main() {
     // You can use print statements as follows for debugging, they'll be visible when running tests.
     println!("Logs from your program will appear here!");

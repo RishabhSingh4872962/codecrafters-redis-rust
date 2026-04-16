@@ -11,13 +11,13 @@ const NULL_BULK_STRING: &str = "$-1\r\n";
 
 const OK_SIMPLE_STRING: &str = "+OK\r\n";
 
-pub struct Value {
-    value: String,
+pub struct Value<T> {
+    value: T,
     expiry: Option<Instant>,
 }
 
-impl Value {
-    fn new(val: String, exp: Option<Instant>) -> Self {
+impl<T> Value<T> {
+    fn new(val: T, exp: Option<Instant>) -> Self {
         Self {
             value: val,
             expiry: exp,
@@ -25,7 +25,11 @@ impl Value {
     }
 }
 
-fn handle_stream(mut stream: TcpStream, mut store: HashMap<String, Value>) {
+fn handle_stream(
+    mut stream: TcpStream,
+    key_value_store: &mut HashMap<String, Value<String>>,
+    list_store: &mut HashMap<String, Value<Vec<String>>>,
+) {
     let mut buf = [0; 1024];
 
     loop {
@@ -65,10 +69,10 @@ fn handle_stream(mut stream: TcpStream, mut store: HashMap<String, Value>) {
 
                                 let expiry_time = handle_expiry(*exp, duration);
 
-                                store.insert(key, Value::new(value, Some(expiry_time)));
+                                key_value_store.insert(key, Value::new(value, Some(expiry_time)));
                             }
                             None => {
-                                store.insert(key, Value::new(value, None));
+                                key_value_store.insert(key, Value::new(value, None));
                             }
                         }
 
@@ -77,14 +81,14 @@ fn handle_stream(mut stream: TcpStream, mut store: HashMap<String, Value>) {
                     "GET" => {
                         let key = res[1];
 
-                        if let Some(val) = store.get(key) {
+                        if let Some(val) = key_value_store.get(key) {
                             if val.expiry.is_some() {
                                 let expiry = val.expiry.unwrap();
 
                                 if expiry < Instant::now() {
                                     stream.write_all(NULL_BULK_STRING.as_bytes()).unwrap();
 
-                                    store.remove(key).unwrap();
+                                    key_value_store.remove(key).unwrap();
                                     return;
                                 }
                             }
@@ -95,6 +99,32 @@ fn handle_stream(mut stream: TcpStream, mut store: HashMap<String, Value>) {
                         } else {
                             stream.write_all(NULL_BULK_STRING.as_bytes()).unwrap();
                         }
+                    }
+                    "RPUSH" => {
+                        let key = res[1];
+
+                        let elements = &res[2..];
+
+                        let mut v = Vec::new();
+
+                        for ele in elements {
+                            v.push(ele.to_string());
+                        }
+
+                        let response: String;
+
+                        if let Some(val) = list_store.get_mut(key) {
+                            
+                            val.value.append(&mut v);
+
+                            response = format!(":{}\r\n", val.value.len());
+                        } else {
+                            response = format!(":{}\r\n", v.len());
+
+                            list_store.insert(key.to_string(), Value::new(v, None));
+                        }
+
+                        stream.write_all(response.as_bytes()).unwrap();
                     }
                     _ => {}
                 }
@@ -128,9 +158,11 @@ fn main() {
     for stream in listener.incoming() {
         if let Ok(stream) = stream {
             thread::spawn({
-                let store: HashMap<String, Value> = HashMap::new();
+                let mut store: HashMap<String, Value<String>> = HashMap::new();
 
-                || handle_stream(stream, store)
+                let mut list_map: HashMap<String, Value<Vec<String>>> = HashMap::new();
+
+                move || handle_stream(stream, &mut store, &mut list_map)
             });
         }
     }

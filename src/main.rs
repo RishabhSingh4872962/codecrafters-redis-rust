@@ -162,8 +162,9 @@ fn handle_stream(
                                 if let Some(res) = get_v {
                                     let result = create_array_response(res);
 
+                                    println!("result =============> {}",result);
+
                                     stream.write_all(result.as_bytes()).unwrap();
-                                    buf = [0; 1024];
 
                                 }
                             }

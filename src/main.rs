@@ -41,7 +41,7 @@ fn handle_stream(
 
                 // let str: String = "*5$3SET$10strawberry$5grape$2PX$3100".to_string();
 
-                println!("str====> {:?}", str);
+                // println!("str====> {:?}", str);
 
                 // let uppper_str = str.to_uppercase();
 
@@ -132,34 +132,26 @@ fn handle_stream(
                     }
 
                     "LRANGE" => {
-                        println!("lrange =========> str======> {:?}", str);
+                        // println!("lrange =========> str======> {:?}", str);
 
                         let list_key = res[1];
 
                         if let Some(val) = list_store.get(list_key) {
-                            let start_index: usize = res[2].parse().unwrap();
+                            let start: isize = res[2].parse().unwrap();
 
-                            let end_index: usize = res[3].parse().unwrap();
+                            let end: isize = res[3].parse().unwrap();
+
+                            let len = val.value.len() as isize;
+
+                            let (start_index, end_index) = handle_index(start, end, len);
+
+                            println!("old index start=>{}, end=>{}",start,end);
+                            println!("new index start=>{}, end=>{}",start_index,end_index);
 
                             if start_index < end_index && start_index < val.value.len() {
-                                let get_v;
+                                let get_v = val.value.get(start_index..=end_index);
 
-                                if end_index + 1 >= val.value.len() {
-                                    println!(
-                                        "start ========>{} ,end=========>{}",
-                                        start_index, end_index
-                                    );
-                                    get_v = val.value.get(start_index..);
-                                } else {
-                                    println!(
-                                        "2222222222222222222222222 start ========>{} ,end=========>{}",
-                                        start_index, end_index
-                                    );
-
-                                    get_v = val.value.get(start_index..end_index + 1);
-                                }
-
-                                println!("get v========> {:?}", get_v);
+                                // println!("get v========> {:?}", get_v);
 
                                 if let Some(res) = get_v {
                                     let result = create_array_response(res);
@@ -290,3 +282,36 @@ fn handle_string<'a>(str: &'a str, prev: &mut usize, v: &mut Vec<&'a str>) {
         _ => {}
     }
 }
+
+fn handle_index(mut start: isize, mut end: isize, len: isize) -> (usize, usize) {
+    if start < 0 {
+        start = start + len;
+
+        if start < 0 {
+            start = 0;
+        }
+    }
+    if end < 0 {
+        end = end + len;
+        if end < 0 {
+            end = 0;
+        }
+    }
+
+    if end >= len {
+        end = len - 1;
+    }
+
+    (start as usize, end as usize)
+}
+
+//  a,  b,  c,  d,   e,
+//  0   1   2   3    4
+//  -5  -4  -3  -2  -1
+
+//   0  2  => a,b,c
+//   0  8  => a,b,c,d,e   8 change to arr length -1  =>4
+
+//   0 -1    0..=4;
+//
+//  -2  -5   3  0

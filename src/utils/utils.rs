@@ -1,4 +1,4 @@
-use std::time::{Duration, Instant};
+use std::{collections::vec_deque::Iter, time::{Duration, Instant}};
 
 pub fn handle_negative_index(mut start: isize, mut end: isize, len: isize) -> (usize, usize) {
     if start < 0 {
@@ -33,10 +33,10 @@ pub fn handle_negative_index(mut start: isize, mut end: isize, len: isize) -> (u
 //
 //  -2  -5   3  0
 
-pub fn create_array_response(v: &[String]) -> String {
+pub fn create_array_response(v: Iter<String>) -> String {
     let mut res = format!("*{}\r\n", v.len());
 
-    for ele in v {
+    for ele in v.into_iter() {
         let s = create_string_response(ele);
 
         res.push_str(&s);

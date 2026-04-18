@@ -1,4 +1,8 @@
-use std::{collections::HashMap, io::Write, net::TcpStream};
+use std::{
+    collections::{HashMap, VecDeque},
+    io::Write,
+    net::TcpStream,
+};
 
 use crate::{
     constants::constants::EMPTY_ARRAY_STRING,
@@ -9,7 +13,7 @@ use crate::{
 pub fn handle_lrange(
     res: &Vec<&str>,
     stream: &mut TcpStream,
-    list_store: &mut HashMap<String, Response<Vec<String>>>,
+    list_store: &mut HashMap<String, Response<VecDeque<String>>>,
 ) {
     let list_key = res[1];
 
@@ -26,17 +30,15 @@ pub fn handle_lrange(
         println!("new index start=>{}, end=>{}", start_index, end_index);
 
         if start_index < end_index && start_index < val.value.len() {
-            let get_v = val.value.get(start_index..=end_index);
+            let get_v = val.value.range(start_index..=end_index);
 
             // println!("get v========> {:?}", get_v);
 
-            if let Some(res) = get_v {
-                let result = create_array_response(res);
+            let result = create_array_response(get_v);
 
-                println!("result =============> {}", result);
+            println!("result =============> {}", result);
 
-                stream.write_all(result.as_bytes()).unwrap();
-            }
+            stream.write_all(result.as_bytes()).unwrap();
         } else {
             stream.write_all(EMPTY_ARRAY_STRING.as_bytes()).unwrap();
         }

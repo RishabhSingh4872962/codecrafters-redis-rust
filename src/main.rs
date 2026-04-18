@@ -32,8 +32,7 @@ use response::response::Response;
 fn handle_stream(
     mut stream: TcpStream,
     key_value_store: &mut HashMap<String, Response<String>>,
-    list_store: &mut HashMap<String, Response<Vec<String>>>,
-    lpush_store: &mut HashMap<String, Response<VecDeque<String>>>,
+    list_store: &mut HashMap<String, Response<VecDeque<String>>>,
 ) {
     let mut buf = [0; 1024];
 
@@ -79,7 +78,7 @@ fn handle_stream(
 
                     }
                     "LPUSH" => {
-                        handle_lpush(&res,&mut stream,lpush_store);
+                        handle_lpush(&res,&mut stream,list_store);
                         buf = [0; 1024];
                     }
 
@@ -108,11 +107,10 @@ fn main() {
             thread::spawn({
                 let mut store: HashMap<String, Response<String>> = HashMap::new();
 
-                let mut list_map: HashMap<String, Response<Vec<String>>> = HashMap::new();
+                let mut list_map: HashMap<String, Response<VecDeque<String>>> = HashMap::new();
 
-                let mut rpush_map: HashMap<String, Response<VecDeque<String>>> = HashMap::new();
 
-                move || handle_stream(stream, &mut store, &mut list_map, &mut rpush_map)
+                move || handle_stream(stream, &mut store, &mut list_map)
             });
         }
     }

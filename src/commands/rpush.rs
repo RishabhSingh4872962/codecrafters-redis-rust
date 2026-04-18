@@ -1,20 +1,20 @@
-use std::{collections::HashMap, io::Write, net::TcpStream};
+use std::{collections::{HashMap, VecDeque}, io::Write, net::TcpStream};
 
 use crate::response::response::Response;
 
 pub fn handle_rpush(
     res: &Vec<&str>,
     stream: &mut TcpStream,
-    list_store: &mut HashMap<String, Response<Vec<String>>>,
+    list_store: &mut HashMap<String, Response<VecDeque<String>>>,
 ) {
     let key = res[1];
 
     let elements = &res[2..];
 
-    let mut v = Vec::new();
+    let mut v = VecDeque::new();
 
     for ele in elements {
-        v.push(ele.to_string());
+        v.push_back(ele.to_string());
     }
 
     let response: String;

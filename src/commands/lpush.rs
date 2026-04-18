@@ -35,7 +35,7 @@ pub fn handle_lpush(
             .insert(key.to_string(), Response::new(queue, None));
           
 
-        response = format!(":{}\n\r", len);
+        response = format!(":{}\r\n", len);
     }
 
     stream.write_all(response.as_bytes()).unwrap();

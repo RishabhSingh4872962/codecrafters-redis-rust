@@ -22,7 +22,7 @@ pub fn handle_lpush(
             val.value.push_front(ele.to_string());
         }
 
-        response = format!(":{}\n\r", val.value.len());
+        response = format!(":{}\r\n", val.value.len());
     } else {
         let mut queue = VecDeque::new();
 

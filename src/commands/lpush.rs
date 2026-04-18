@@ -13,7 +13,7 @@ pub fn handle_lpush(
 ) {
     let key = res[1];
 
-    let elements = &res[1..];
+    let elements = &res[2..];
 
     let response: String;
 

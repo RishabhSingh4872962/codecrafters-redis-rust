@@ -21,8 +21,9 @@ use utils::utils::{
 use utils::parser::parser;
 
 use crate::commands::{
-    echo::handle_echo, get::handle_get, llen::handle_llen, lpop::handle_lpop, lpush::handle_lpush,
-    lrange::handle_lrange, ping::handle_ping, rpush::handle_rpush, set::handle_set,
+    blpop::handle_blpop, echo::handle_echo, get::handle_get, llen::handle_llen, lpop::handle_lpop,
+    lpush::handle_lpush, lrange::handle_lrange, ping::handle_ping, rpush::handle_rpush,
+    set::handle_set,
 };
 
 mod response;
@@ -87,6 +88,11 @@ fn handle_stream(
                     }
                     "LPOP" => {
                         handle_lpop(&res, &mut stream, list_store);
+
+                        buf = [0; 1024];
+                    }
+                    "BLPOP" => {
+                        handle_blpop(&res, &mut stream, list_store);
 
                         buf = [0; 1024];
                     }

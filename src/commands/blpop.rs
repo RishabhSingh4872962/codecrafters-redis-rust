@@ -22,6 +22,7 @@ pub fn handle_blpop(
 
     match timeout_sec {
         Some(0) | None => loop {
+            println!("loop 1111111111111111111111");
             if let Some(val) = list_store.get_mut(key) {
 
                 println!("value ===> {:?}",val.value);
@@ -34,6 +35,8 @@ pub fn handle_blpop(
             }
         },
         Some(secs) => {
+            println!("loop 2222222222222222222222");
+
             let waiting_time = Instant::now() + Duration::from_secs(secs);
 
             loop {

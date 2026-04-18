@@ -32,8 +32,8 @@ pub fn handle_lpush(
 
         let len = queue.len();
         lpush_store
-            .insert(key.to_string(), Response::new(queue, None))
-            .unwrap();
+            .insert(key.to_string(), Response::new(queue, None));
+          
 
         response = format!(":{}\n\r", len);
     }

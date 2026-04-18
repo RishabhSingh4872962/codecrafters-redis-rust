@@ -1,5 +1,7 @@
 use std::time::Instant;
 
+
+#[derive(Debug)]
 pub struct Response<T> {
     pub value: T,
     pub expiry: Option<Instant>,

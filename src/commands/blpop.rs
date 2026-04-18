@@ -2,6 +2,7 @@ use std::{
     collections::{HashMap, VecDeque},
     io::Write,
     net::TcpStream,
+    thread,
     time::{Duration, Instant},
 };
 
@@ -22,21 +23,20 @@ pub fn handle_blpop(
 
     match timeout_sec {
         Some(0) | None => loop {
-            println!("loop 1111111111111111111111");
             if let Some(val) = list_store.get_mut(key) {
-
-                println!("value ===> {:?}",val.value);
+                println!("value ===> {:?}", val.value);
 
                 if let Some(ele) = val.value.pop_front() {
                     res.push_str(&ele);
                     stream.write_all(res.as_bytes()).unwrap();
                     break;
                 }
+            } else {
+                println!("list stroe {:?}", list_store);
+                thread::sleep(Duration::from_millis(500));
             }
         },
         Some(secs) => {
-            println!("loop 2222222222222222222222");
-
             let waiting_time = Instant::now() + Duration::from_secs(secs);
 
             loop {
@@ -58,5 +58,4 @@ pub fn handle_blpop(
             }
         }
     }
-
 }

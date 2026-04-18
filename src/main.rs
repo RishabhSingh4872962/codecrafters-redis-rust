@@ -92,6 +92,7 @@ fn handle_stream(
                         buf = [0; 1024];
                     }
                     "BLPOP" => {
+                        println!("run blpop command");
                         handle_blpop(&res, &mut stream, list_store);
 
                         buf = [0; 1024];

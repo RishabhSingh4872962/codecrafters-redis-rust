@@ -23,6 +23,9 @@ pub fn handle_blpop(
     match timeout_sec {
         Some(0) | None => loop {
             if let Some(val) = list_store.get_mut(key) {
+
+                println!("value ===> {:?}",val.value);
+
                 if let Some(ele) = val.value.pop_front() {
                     res.push_str(&ele);
                     stream.write_all(res.as_bytes()).unwrap();

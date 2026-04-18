@@ -13,3 +13,5 @@ pub mod lrange;
 pub mod lpush;
 
 pub mod llen;
+
+pub mod lpop;

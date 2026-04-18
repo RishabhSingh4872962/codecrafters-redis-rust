@@ -9,7 +9,7 @@ use crate::response::response::Response;
 pub fn handle_lpush(
     res: &Vec<&str>,
     stream: &mut TcpStream,
-    lpush_store: &mut HashMap<String, Response<VecDeque<String>>>,
+    list_store: &mut HashMap<String, Response<VecDeque<String>>>,
 ) {
     let key = res[1];
 
@@ -17,7 +17,7 @@ pub fn handle_lpush(
 
     let response: String;
 
-    if let Some(val) = lpush_store.get_mut(key) {
+    if let Some(val) = list_store.get_mut(key) {
         for ele in elements {
             val.value.push_front(ele.to_string());
         }
@@ -31,7 +31,7 @@ pub fn handle_lpush(
         }
 
         let len = queue.len();
-        lpush_store
+        list_store
             .insert(key.to_string(), Response::new(queue, None));
           
 

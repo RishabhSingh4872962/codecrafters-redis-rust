@@ -21,8 +21,8 @@ use utils::utils::{
 use utils::parser::parser;
 
 use crate::commands::{
-    echo::handle_echo, get::handle_get, lpush::handle_lpush, lrange::handle_lrange,
-    ping::handle_ping, rpush::handle_rpush, set::handle_set,
+    echo::handle_echo, get::handle_get, llen::handle_llen, lpush::handle_lpush,
+    lrange::handle_lrange, ping::handle_ping, rpush::handle_rpush, set::handle_set,
 };
 
 mod response;
@@ -75,10 +75,14 @@ fn handle_stream(
 
                         handle_lrange(&res, &mut stream, list_store);
                         buf = [0; 1024];
-
                     }
                     "LPUSH" => {
-                        handle_lpush(&res,&mut stream,list_store);
+                        handle_lpush(&res, &mut stream, list_store);
+                        buf = [0; 1024];
+                    }
+                    "LLEN" => {
+                        handle_llen(&res, &mut stream, list_store);
+
                         buf = [0; 1024];
                     }
 
@@ -108,7 +112,6 @@ fn main() {
                 let mut store: HashMap<String, Response<String>> = HashMap::new();
 
                 let mut list_map: HashMap<String, Response<VecDeque<String>>> = HashMap::new();
-
 
                 move || handle_stream(stream, &mut store, &mut list_map)
             });

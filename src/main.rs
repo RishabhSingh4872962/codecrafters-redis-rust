@@ -1,36 +1,39 @@
 #![allow(unused_imports)]
 use std::{
-    collections::HashMap,
+    collections::{HashMap, VecDeque},
     io::{Read, Write},
     net::{TcpListener, TcpStream},
     thread,
     time::{Duration, Instant, SystemTime},
 };
 
-const NULL_BULK_STRING: &str = "$-1\r\n";
+mod constants;
+use constants::constants::*;
 
-const OK_SIMPLE_STRING: &str = "+OK\r\n";
+mod commands;
 
-const EMPTY_ARRAY_STRING: &str = "*0\r\n";
+mod utils;
 
-pub struct Value<T> {
-    value: T,
-    expiry: Option<Instant>,
-}
+use utils::utils::{
+    create_array_response, create_string_response, handle_expiry, handle_negative_index,
+};
 
-impl<T> Value<T> {
-    fn new(val: T, exp: Option<Instant>) -> Self {
-        Self {
-            value: val,
-            expiry: exp,
-        }
-    }
-}
+use utils::parser::parser;
+
+use crate::commands::{
+    echo::handle_echo, get::handle_get, lpush::handle_lpush, lrange::handle_lrange,
+    ping::handle_ping, rpush::handle_rpush, set::handle_set,
+};
+
+mod response;
+
+use response::response::Response;
 
 fn handle_stream(
     mut stream: TcpStream,
-    key_value_store: &mut HashMap<String, Value<String>>,
-    list_store: &mut HashMap<String, Value<Vec<String>>>,
+    key_value_store: &mut HashMap<String, Response<String>>,
+    list_store: &mut HashMap<String, Response<Vec<String>>>,
+    lpush_store: &mut HashMap<String, Response<VecDeque<String>>>,
 ) {
     let mut buf = [0; 1024];
 
@@ -50,124 +53,36 @@ fn handle_stream(
                 println!("ress===> {:?}", res);
 
                 match res[0] {
-                    "PING" => {
-                        stream.write_all(b"+PONG\r\n").unwrap();
-                    }
+                    "PING" => handle_ping(&mut stream),
                     "ECHO" => {
-                        let s = format!("${}\r\n{}\r\n", res[1].len(), res[1]);
-
-                        stream.write_all(s.as_bytes()).unwrap();
+                        handle_echo(&mut stream, res.get(1));
                     }
                     "SET" => {
-                        let key = res[1].to_string();
+                        handle_set(&res, key_value_store, &mut stream);
 
-                        let value = res[2].to_string();
-
-                        let exp_format = res.get(3);
-
-                        match exp_format {
-                            Some(exp) => {
-                                let duration: u64 = res[4].parse().unwrap();
-
-                                let expiry_time = handle_expiry(*exp, duration);
-
-                                key_value_store.insert(key, Value::new(value, Some(expiry_time)));
-                            }
-                            None => {
-                                key_value_store.insert(key, Value::new(value, None));
-                            }
-                        }
-
-                        stream.write_all(OK_SIMPLE_STRING.as_bytes()).unwrap();
                         buf = [0; 1024];
                     }
                     "GET" => {
-                        let key = res[1];
-
-                        if let Some(val) = key_value_store.get(key) {
-                            if val.expiry.is_some() {
-                                let expiry = val.expiry.unwrap();
-
-                                if expiry < Instant::now() {
-                                    stream.write_all(NULL_BULK_STRING.as_bytes()).unwrap();
-
-                                    key_value_store.remove(key).unwrap();
-                                    return;
-                                }
-                            }
-
-                            let s = format!("${}\r\n{}\r\n", val.value.len(), val.value);
-
-                            stream.write_all(s.as_bytes()).unwrap();
-                        } else {
-                            stream.write_all(NULL_BULK_STRING.as_bytes()).unwrap();
-                        }
+                        handle_get(&res, key_value_store, &mut stream);
                         buf = [0; 1024];
                     }
                     "RPUSH" => {
-                        let key = res[1];
-
-                        let elements = &res[2..];
-
-                        let mut v = Vec::new();
-
-                        for ele in elements {
-                            v.push(ele.to_string());
-                        }
-
-                        let response: String;
-
-                        if let Some(val) = list_store.get_mut(key) {
-                            val.value.append(&mut v);
-
-                            response = format!(":{}\r\n", val.value.len());
-                        } else {
-                            response = format!(":{}\r\n", v.len());
-
-                            list_store.insert(key.to_string(), Value::new(v, None));
-                        }
-
-                        stream.write_all(response.as_bytes()).unwrap();
+                        handle_rpush(&res, &mut stream, list_store);
                         buf = [0; 1024];
                     }
 
                     "LRANGE" => {
                         // println!("lrange =========> str======> {:?}", str);
 
-                        let list_key = res[1];
+                        handle_lrange(&res, &mut stream, list_store);
+                        buf = [0; 1024];
 
-                        if let Some(val) = list_store.get(list_key) {
-                            let start: isize = res[2].parse().unwrap();
-
-                            let end: isize = res[3].parse().unwrap();
-
-                            let len = val.value.len() as isize;
-
-                            let (start_index, end_index) = handle_index(start, end, len);
-
-                            println!("old index start=>{}, end=>{}",start,end);
-                            println!("new index start=>{}, end=>{}",start_index,end_index);
-
-                            if start_index < end_index && start_index < val.value.len() {
-                                let get_v = val.value.get(start_index..=end_index);
-
-                                // println!("get v========> {:?}", get_v);
-
-                                if let Some(res) = get_v {
-                                    let result = create_array_response(res);
-
-                                    println!("result =============> {}", result);
-
-                                    stream.write_all(result.as_bytes()).unwrap();
-                                }
-                            } else {
-                                stream.write_all(EMPTY_ARRAY_STRING.as_bytes()).unwrap();
-                            }
-                        } else {
-                            stream.write_all(EMPTY_ARRAY_STRING.as_bytes()).unwrap();
-                        }
+                    }
+                    "LPUSH" => {
+                        handle_lpush(&res,&mut stream,lpush_store);
                         buf = [0; 1024];
                     }
+
                     _ => {}
                 }
             }
@@ -180,30 +95,6 @@ fn handle_stream(
     }
 }
 
-fn handle_expiry(expiry_type: &str, time: u64) -> Instant {
-    match expiry_type {
-        "PX" => Instant::now() + Duration::from_millis(time),
-
-        "EX" => Instant::now() + Duration::from_secs(time),
-        _ => Instant::now(),
-    }
-}
-
-pub fn create_array_response(v: &[String]) -> String {
-    let mut res = format!("*{}\r\n", v.len());
-
-    for ele in v {
-        let s = create_string_response(ele);
-
-        res.push_str(&s);
-    }
-
-    res
-}
-
-pub fn create_string_response(str: &str) -> String {
-    format!("${}\r\n{}\r\n", str.len(), str)
-}
 fn main() {
     // You can use print statements as follows for debugging, they'll be visible when running tests.
     println!("Logs from your program will appear here!");
@@ -215,11 +106,13 @@ fn main() {
     for stream in listener.incoming() {
         if let Ok(stream) = stream {
             thread::spawn({
-                let mut store: HashMap<String, Value<String>> = HashMap::new();
+                let mut store: HashMap<String, Response<String>> = HashMap::new();
 
-                let mut list_map: HashMap<String, Value<Vec<String>>> = HashMap::new();
+                let mut list_map: HashMap<String, Response<Vec<String>>> = HashMap::new();
 
-                move || handle_stream(stream, &mut store, &mut list_map)
+                let mut rpush_map: HashMap<String, Response<VecDeque<String>>> = HashMap::new();
+
+                move || handle_stream(stream, &mut store, &mut list_map, &mut rpush_map)
             });
         }
     }
@@ -236,82 +129,3 @@ fn main() {
 
     // println!("{:?}", res);
 }
-
-fn parser(str: &str) -> Vec<&str> {
-    let first_ch: &str = &str[..1];
-
-    let mut v: Vec<&str> = Vec::new();
-
-    // println!("str parser===>{}",str);
-    match first_ch {
-        "*" => {
-            let next = str.find("\r\n");
-
-            if let Some(index) = next {
-                // let mut arr_len: isize = str[1..index].parse().unwrap();
-
-                let rest_str = &str[index + 2..];
-
-                // println!("arr_len==> {},res_str ===>{:?}", 0, rest_str);
-
-                let mut p = 0;
-
-                for s in rest_str.lines() {
-                    handle_string(s, &mut p, &mut v);
-                }
-            }
-
-            return v;
-        }
-        _ => return v,
-    }
-}
-
-fn handle_string<'a>(str: &'a str, prev: &mut usize, v: &mut Vec<&'a str>) {
-    let first_ch = &str[..1];
-
-    match first_ch {
-        "$" => {
-            *prev = str[1..].parse().unwrap();
-        }
-        _ if str.len() > 0 => {
-            if str.len() == *prev {
-                v.push(str);
-            }
-        }
-        _ => {}
-    }
-}
-
-fn handle_index(mut start: isize, mut end: isize, len: isize) -> (usize, usize) {
-    if start < 0 {
-        start = start + len;
-
-        if start < 0 {
-            start = 0;
-        }
-    }
-    if end < 0 {
-        end = end + len;
-        if end < 0 {
-            end = 0;
-        }
-    }
-
-    if end >= len {
-        end = len - 1;
-    }
-
-    (start as usize, end as usize)
-}
-
-//  a,  b,  c,  d,   e,
-//  0   1   2   3    4
-//  -5  -4  -3  -2  -1
-
-//   0  2  => a,b,c
-//   0  8  => a,b,c,d,e   8 change to arr length -1  =>4
-
-//   0 -1    0..=4;
-//
-//  -2  -5   3  0

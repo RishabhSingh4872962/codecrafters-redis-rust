@@ -1,22 +1,30 @@
-use std::{collections::HashMap, io::Write, net::TcpStream, time::Instant};
+use std::{
+    collections::HashMap,
+    io::Write,
+    net::TcpStream,
+    sync::{Arc, Mutex},
+    time::Instant,
+};
 
 use crate::{constants::constants::NULL_BULK_STRING, response::response::Response};
 
 pub fn handle_get(
     res: &Vec<&str>,
-    key_value_store: &mut HashMap<String, Response<String>>,
+    key_value_store: Arc<Mutex<HashMap<String, Response<String>>>>,
     stream: &mut TcpStream,
 ) {
     let key = res[1];
 
-    if let Some(val) = key_value_store.get(key) {
+    let mut store = key_value_store.lock().unwrap();
+
+    if let Some(val) = store.get(key) {
         if val.expiry.is_some() {
-            let expiry = val.expiry.unwrap();
+            let expiry: Instant = val.expiry.unwrap();
 
             if expiry < Instant::now() {
                 stream.write_all(NULL_BULK_STRING.as_bytes()).unwrap();
 
-                key_value_store.remove(key).unwrap();
+                store.remove(key).unwrap();
                 return;
             }
         }

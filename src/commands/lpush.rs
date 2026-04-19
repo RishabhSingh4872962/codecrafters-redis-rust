@@ -2,6 +2,7 @@ use std::{
     collections::{HashMap, VecDeque},
     io::Write,
     net::TcpStream,
+    sync::{Arc, Mutex},
 };
 
 use crate::response::response::Response;
@@ -9,13 +10,15 @@ use crate::response::response::Response;
 pub fn handle_lpush(
     res: &Vec<&str>,
     stream: &mut TcpStream,
-    list_store: &mut HashMap<String, Response<VecDeque<String>>>,
+    list_store: Arc<Mutex<HashMap<String, Response<VecDeque<String>>>>>,
 ) {
     let key = res[1];
 
     let elements = &res[2..];
 
     let response: String;
+
+    let mut list_store = list_store.lock().unwrap();
 
     if let Some(val) = list_store.get_mut(key) {
         for ele in elements {
@@ -31,9 +34,7 @@ pub fn handle_lpush(
         }
 
         let len = queue.len();
-        list_store
-            .insert(key.to_string(), Response::new(queue, None));
-          
+        list_store.insert(key.to_string(), Response::new(queue, None));
 
         response = format!(":{}\r\n", len);
     }

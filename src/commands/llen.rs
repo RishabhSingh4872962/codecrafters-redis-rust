@@ -1,4 +1,4 @@
-use std::{collections::{HashMap, VecDeque}, io::Write, net::TcpStream};
+use std::{collections::{HashMap, VecDeque}, io::Write, net::TcpStream, sync::{Arc, Mutex}};
 
 use crate::response::response::Response;
 
@@ -6,9 +6,12 @@ pub fn handle_llen(
     res: &Vec<&str>,
     stream: &mut TcpStream,
 
-    list_store: &HashMap<String, Response<VecDeque<String>>>,
+    list_store: Arc<Mutex<HashMap<String, Response<VecDeque<String>>>>>,
 ) {
     let key = res[1];
+
+    
+    let list_store = list_store.lock().unwrap();
 
     if let Some(val) = list_store.get(key) {
         let len = val.value.len();

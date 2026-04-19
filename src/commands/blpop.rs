@@ -2,16 +2,20 @@ use std::{
     collections::{HashMap, VecDeque},
     io::Write,
     net::TcpStream,
+    sync::{Arc, Mutex},
     thread,
     time::{Duration, Instant},
 };
 
-use crate::{constants::constants::NULL_ARRAY_STRING, response::response::Response};
+use crate::{
+    constants::constants::NULL_ARRAY_STRING, response::response::Response,
+    utils::utils::create_string_response,
+};
 
 pub fn handle_blpop(
     res: &Vec<&str>,
     stream: &mut TcpStream,
-    list_store: &mut HashMap<String, Response<VecDeque<String>>>,
+    list_store: Arc<Mutex<HashMap<String, Response<VecDeque<String>>>>>,
 ) {
     let key = res[1];
 
@@ -19,27 +23,29 @@ pub fn handle_blpop(
 
     let mut res = String::from("*2\r\n");
 
-    res.push_str(key);
+    res.push_str(&create_string_response(key));
 
     match timeout_sec {
         Some(0) | None => loop {
-            if let Some(val) = list_store.get_mut(key) {
-                println!("value ===> {:?}", val.value);
+            let mut list_store = list_store.lock().unwrap();
 
+            if let Some(val) = list_store.get_mut(key) {
                 if let Some(ele) = val.value.pop_front() {
-                    res.push_str(&ele);
+                    res.push_str(&create_string_response(&ele));
                     stream.write_all(res.as_bytes()).unwrap();
                     break;
                 }
             } else {
-                println!("list stroe {:?}", list_store);
-                thread::sleep(Duration::from_millis(500));
+                // println!("list stroe {:?}", list_store);
+                // thread::sleep(Duration::from_millis(100));
             }
         },
         Some(secs) => {
             let waiting_time = Instant::now() + Duration::from_secs(secs);
 
             loop {
+                let mut list_store = list_store.lock().unwrap();
+
                 let now = Instant::now();
 
                 if now > waiting_time {

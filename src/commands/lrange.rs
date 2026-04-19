@@ -2,6 +2,7 @@ use std::{
     collections::{HashMap, VecDeque},
     io::Write,
     net::TcpStream,
+    sync::{Arc, Mutex},
 };
 
 use crate::{
@@ -13,9 +14,11 @@ use crate::{
 pub fn handle_lrange(
     res: &Vec<&str>,
     stream: &mut TcpStream,
-    list_store: &mut HashMap<String, Response<VecDeque<String>>>,
+    list_store: Arc<Mutex<HashMap<String, Response<VecDeque<String>>>>>,
 ) {
     let list_key = res[1];
+
+    let list_store = list_store.lock().unwrap();
 
     if let Some(val) = list_store.get(list_key) {
         let start: isize = res[2].parse().unwrap();

@@ -3,6 +3,7 @@ use std::{
     collections::{HashMap, VecDeque},
     io::{Read, Write},
     net::{TcpListener, TcpStream},
+    sync::{Arc, Mutex},
     thread,
     time::{Duration, Instant, SystemTime},
 };
@@ -32,12 +33,14 @@ use response::response::Response;
 
 fn handle_stream(
     mut stream: TcpStream,
-    key_value_store: &mut HashMap<String, Response<String>>,
-    list_store: &mut HashMap<String, Response<VecDeque<String>>>,
+    key_value_store: Arc<Mutex<HashMap<String, Response<String>>>>,
+    list_store: Arc<Mutex<HashMap<String, Response<VecDeque<String>>>>>,
 ) {
     let mut buf = [0; 1024];
 
     loop {
+        let key_value_store = key_value_store.clone();
+        let list_store = list_store.clone();
         match stream.read(&mut buf) {
             Ok(_res) => {
                 let str = String::from_utf8_lossy(&buf[..]);
@@ -92,7 +95,6 @@ fn handle_stream(
                         buf = [0; 1024];
                     }
                     "BLPOP" => {
-                        println!("run blpop command");
                         handle_blpop(&res, &mut stream, list_store);
 
                         buf = [0; 1024];
@@ -118,14 +120,19 @@ fn main() {
 
     let listener = TcpListener::bind("127.0.0.1:6379").unwrap();
 
+    let key_value_store: Arc<Mutex<HashMap<String, Response<String>>>> =
+        Arc::new(Mutex::new(HashMap::new()));
+    let list_map_store: Arc<Mutex<HashMap<String, Response<VecDeque<String>>>>> =
+        Arc::new(Mutex::new(HashMap::new()));
+
     for stream in listener.incoming() {
         if let Ok(stream) = stream {
             thread::spawn({
-                let mut store: HashMap<String, Response<String>> = HashMap::new();
+                let store = key_value_store.clone();
 
-                let mut list_map: HashMap<String, Response<VecDeque<String>>> = HashMap::new();
+                let list_map = list_map_store.clone();
 
-                move || handle_stream(stream, &mut store, &mut list_map)
+                move || handle_stream(stream, store, list_map)
             });
         }
     }

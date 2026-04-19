@@ -2,6 +2,7 @@ use std::{
     collections::{HashMap, VecDeque},
     io::Write,
     net::TcpStream,
+    sync::{Arc, Mutex},
 };
 
 use crate::{
@@ -12,11 +13,13 @@ use crate::{
 pub fn handle_lpop(
     res: &Vec<&str>,
     stream: &mut TcpStream,
-    list_store: &mut HashMap<String, Response<VecDeque<String>>>,
+    list_store: Arc<Mutex<HashMap<String, Response<VecDeque<String>>>>>,
 ) {
     let key = res[1];
 
     let removed_ele_count = res.get(2).and_then(|e| e.parse::<usize>().ok());
+
+    let mut list_store = list_store.lock().unwrap();
 
     if let Some(val) = list_store.get_mut(key) {
         if let Some(count) = removed_ele_count {
@@ -38,8 +41,6 @@ pub fn handle_lpop(
         stream.write_all(NULL_BULK_STRING.as_bytes()).unwrap();
     }
 }
-
-
 
 fn handle_pop_to_string(val: &mut VecDeque<String>, mut n: usize) -> String {
     n = if n > val.len() { val.len() } else { n };

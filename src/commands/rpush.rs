@@ -1,11 +1,16 @@
-use std::{collections::{HashMap, VecDeque}, io::Write, net::TcpStream};
+use std::{
+    collections::{HashMap, VecDeque},
+    io::Write,
+    net::TcpStream,
+    sync::{Arc, Mutex},
+};
 
 use crate::response::response::Response;
 
 pub fn handle_rpush(
     res: &Vec<&str>,
     stream: &mut TcpStream,
-    list_store: &mut HashMap<String, Response<VecDeque<String>>>,
+    list_store: Arc<Mutex<HashMap<String, Response<VecDeque<String>>>>>,
 ) {
     let key = res[1];
 
@@ -19,15 +24,21 @@ pub fn handle_rpush(
 
     let response: String;
 
-    if let Some(val) = list_store.get_mut(key) {
-        val.value.append(&mut v);
+    let store = list_store.lock();
 
-        response = format!(":{}\r\n", val.value.len());
-    } else {
-        response = format!(":{}\r\n", v.len());
+    match store {
+        Ok(mut store) => {
+            if let Some(val) = store.get_mut(key) {
+                val.value.append(&mut v);
 
-        list_store.insert(key.to_string(), Response::new(v, None));
+                response = format!(":{}\r\n", val.value.len());
+            } else {
+                response = format!(":{}\r\n", v.len());
+
+                store.insert(key.to_string(), Response::new(v, None));
+            }
+            stream.write_all(response.as_bytes()).unwrap();
+        }
+        Err(_) => {}
     }
-
-    stream.write_all(response.as_bytes()).unwrap();
 }

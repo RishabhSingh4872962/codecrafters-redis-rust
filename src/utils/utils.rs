@@ -1,4 +1,10 @@
-use std::{collections::vec_deque::Iter, time::{Duration, Instant}};
+use std::{
+    collections::{HashMap, vec_deque::Iter},
+    sync::{Arc, Mutex},
+    time::{Duration, Instant},
+};
+
+use crate::response::response::DATATYPE;
 
 pub fn handle_negative_index(mut start: isize, mut end: isize, len: isize) -> (usize, usize) {
     if start < 0 {
@@ -37,7 +43,7 @@ pub fn create_array_response(v: Iter<String>) -> String {
     let mut res = format!("*{}\r\n", v.len());
 
     for ele in v.into_iter() {
-        let s = create_string_response(ele);
+        let s = create_bulk_string_response(ele);
 
         res.push_str(&s);
     }
@@ -45,8 +51,12 @@ pub fn create_array_response(v: Iter<String>) -> String {
     res
 }
 
-pub fn create_string_response(str: &str) -> String {
+pub fn create_bulk_string_response(str: &str) -> String {
     format!("${}\r\n{}\r\n", str.len(), str)
+}
+
+pub fn create_simple_string(str: &str) -> String {
+    format!("+{}\r\n", str)
 }
 
 pub fn handle_expiry(expiry_type: &str, time: u64) -> Instant {
@@ -56,4 +66,16 @@ pub fn handle_expiry(expiry_type: &str, time: u64) -> Instant {
         "EX" => Instant::now() + Duration::from_secs(time),
         _ => Instant::now(),
     }
+}
+
+pub fn insert_key(
+    redis_main_store: Arc<Mutex<HashMap<String, DATATYPE>>>,
+    key: String,
+    value: DATATYPE,
+) {
+    redis_main_store.lock().unwrap().insert(key, value);
+}
+
+pub fn remove_key(redis_main_store: Arc<Mutex<HashMap<String, DATATYPE>>>, key: &str) {
+    redis_main_store.lock().unwrap().remove(key);
 }

@@ -17,3 +17,5 @@ pub mod llen;
 pub mod lpop;
 
 pub mod blpop;
+
+pub mod datatype;

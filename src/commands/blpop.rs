@@ -9,34 +9,35 @@ use std::{
 };
 
 use crate::{
-    constants::constants::NULL_ARRAY_STRING, response::response::Response,
-    utils::utils::create_string_response,
+    constants::constants::NULL_ARRAY_STRING,
+    response::response::{DATATYPE, Response},
+    utils::utils::create_bulk_string_response,
 };
 
 pub fn handle_blpop(
     res: &Vec<&str>,
     stream: &mut TcpStream,
-    list_store: Arc<Mutex<HashMap<String, Response<VecDeque<String>>>>>,
+    list_store: Arc<Mutex<HashMap<String, DATATYPE>>>,
 ) {
     let key = res[1];
 
     let timeout_sec: Option<f64> = res.get(2).and_then(|sec| sec.parse().ok());
 
-
     let mut res = String::from("*2\r\n");
 
-    res.push_str(&create_string_response(key));
-
+    res.push_str(&create_bulk_string_response(key));
 
     match timeout_sec {
         Some(0.0) | None => loop {
             let mut list_store = list_store.lock().unwrap();
 
             if let Some(val) = list_store.get_mut(key) {
-                if let Some(ele) = val.value.pop_front() {
-                    res.push_str(&create_string_response(&ele));
-                    stream.write_all(res.as_bytes()).unwrap();
-                    break;
+                if let DATATYPE::List(val) = val {
+                    if let Some(ele) = val.value.pop_front() {
+                        res.push_str(&create_bulk_string_response(&ele));
+                        stream.write_all(res.as_bytes()).unwrap();
+                        break;
+                    }
                 }
             } else {
                 // println!("list stroe {:?}", list_store);
@@ -57,11 +58,13 @@ pub fn handle_blpop(
                 }
 
                 if let Some(val) = list_store.get_mut(key) {
-                    if let Some(ele) = val.value.pop_front() {
-                         res.push_str(&create_string_response(&ele));
+                    if let DATATYPE::List(val) = val {
+                        if let Some(ele) = val.value.pop_front() {
+                            res.push_str(&create_bulk_string_response(&ele));
 
-                        stream.write_all(res.as_bytes()).unwrap();
-                        break;
+                            stream.write_all(res.as_bytes()).unwrap();
+                            break;
+                        }
                     }
                 }
             }

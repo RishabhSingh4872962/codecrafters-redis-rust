@@ -7,13 +7,14 @@ use std::{
 };
 
 use crate::{
-    constants::constants::OK_SIMPLE_STRING, response::response::Response,
-    utils::utils::handle_expiry,
+    constants::constants::OK_SIMPLE_STRING,
+    response::response::{DATATYPE, Response},
+    utils::utils::{handle_expiry, insert_key},
 };
 
 pub fn handle_set(
     res: &Vec<&str>,
-    key_value_store: Arc<Mutex<HashMap<String, Response<String>>>>,
+    redis_main_store: Arc<Mutex<HashMap<String, DATATYPE>>>,
     stream: &mut TcpStream,
 ) {
     let key = res[1].to_string();
@@ -30,16 +31,18 @@ pub fn handle_set(
 
             let expiry_time = handle_expiry(*exp, duration);
 
-            {
-                let mut store = key_value_store.lock().unwrap();
-
-                store.insert(key, Response::new(value, Some(expiry_time)));
-            }
+            insert_key(
+                redis_main_store,
+                key,
+                DATATYPE::String(Response::new(value, Some(expiry_time))),
+            );
         }
         None => {
-            let mut store = key_value_store.lock().unwrap();
-
-            store.insert(key, Response::new(value, None));
+            insert_key(
+                redis_main_store,
+                key,
+                DATATYPE::String(Response::new(value, None)),
+            );
         }
     }
 

@@ -5,12 +5,12 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use crate::response::response::Response;
+use crate::response::response::{DATATYPE, Response};
 
 pub fn handle_lpush(
     res: &Vec<&str>,
     stream: &mut TcpStream,
-    list_store: Arc<Mutex<HashMap<String, Response<VecDeque<String>>>>>,
+    list_store: Arc<Mutex<HashMap<String, DATATYPE>>>,
 ) {
     let key = res[1];
 
@@ -19,13 +19,20 @@ pub fn handle_lpush(
     let response: String;
 
     let mut list_store = list_store.lock().unwrap();
-
+    
     if let Some(val) = list_store.get_mut(key) {
-        for ele in elements {
-            val.value.push_front(ele.to_string());
-        }
+        match val {
+            DATATYPE::List(val) => {
+                for ele in elements {
+                    val.value.push_front(ele.to_string());
+                }
 
-        response = format!(":{}\r\n", val.value.len());
+                response = format!(":{}\r\n", val.value.len());
+            }
+            _ => {
+                response = "".to_string();
+            }
+        }
     } else {
         let mut queue = VecDeque::new();
 
@@ -34,7 +41,7 @@ pub fn handle_lpush(
         }
 
         let len = queue.len();
-        list_store.insert(key.to_string(), Response::new(queue, None));
+        list_store.insert(key.to_string(), DATATYPE::List(Response::new(queue, None)));
 
         response = format!(":{}\r\n", len);
     }
